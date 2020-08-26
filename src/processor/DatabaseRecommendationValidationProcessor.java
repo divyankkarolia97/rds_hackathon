@@ -3,15 +3,11 @@ package processor;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.emory.mathcs.backport.java.util.Arrays;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import model.Engine;
 import model.InputRequest;
 import model.response.DialogAction;
-import model.response.Intent;
 import model.response.Response;
 
 public class DatabaseRecommendationValidationProcessor implements RequestHandler<Map<String, Object>, Object> {
@@ -26,17 +22,8 @@ public class DatabaseRecommendationValidationProcessor implements RequestHandler
             Map<String, Object> slotValues = (Map<String, Object>) currentIntent.get("slots");
             InputRequest inputRequest = objectMapper.convertValue(slotValues, InputRequest.class);
 
-            validateInput(inputRequest);
+            return validateInput(inputRequest);
 
-            List<Intent> recentIntentSummaryView = new ArrayList<>();
-
-            if(!Objects.isNull(inputRequest.getEngine()) && inputRequest.getEngine().equals(Engine.AURORA)) {
-                Intent intent = new Intent("engine_version");
-                recentIntentSummaryView.add(intent);
-            }
-
-
-            return new Response(null, recentIntentSummaryView , new DialogAction("true", "fulfilled", "good to go."));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -44,10 +31,27 @@ public class DatabaseRecommendationValidationProcessor implements RequestHandler
     }
 
 
-    boolean validateInput(InputRequest inputRequest) {
+    Response validateInput(InputRequest inputRequest) {
 
         // all the validations go here
-        if (Engine.values().inputRequest.getEngine())
+
+        Boolean flagForEngineMatch = false;
+        for (Engine engine : Engine.values()) {
+            if (engine.getName().equals(inputRequest.getEngineType())) {
+                flagForEngineMatch = true;
+            }
+        }
+
+        if (!flagForEngineMatch) {
+            return new Response(objectMapper.convertValue(inputRequest, Map.class), new DialogAction("false", "fulfilled", null, null));
+        }
+
+        if (!Objects.isNull(inputRequest.getEngineType()) && inputRequest.getEngineType().equals(Engine.AURORA)) {
+
+        }
+
+        return new Response(objectMapper.convertValue(inputRequest, Map.class), new DialogAction("ElicitSlot", null, null, "engine-version"));
+
 
     }
 

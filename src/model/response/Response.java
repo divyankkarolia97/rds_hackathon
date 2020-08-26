@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class Response {
+
     Map<String, Object> sessionAttributes;
-    List<Intent> recentIntentSummaryView;
     DialogAction dialogAction;
 }

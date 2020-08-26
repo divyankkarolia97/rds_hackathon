@@ -1,13 +1,17 @@
 package model.response;
 
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import model.response.Message;
+import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class DialogAction {
+
     String type;
-    String fulfilementState;
-    String message;
+    String fulfillmentState;
+    Map<String, String> message;
+    String slotToElicit;
 }

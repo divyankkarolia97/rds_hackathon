@@ -21,12 +21,12 @@ public class Config {
     // Common configs
     public static Double storagePerGbCostPerMonth = 0.115;
     public static Double backupStoragePerGbCostPerMonth = 0.095;
-    public static String comment = "Head over to the porduct page to learn more.";
+    public static String comment = "Head over to the product page to learn more.";
 
-    public static Map<Engine, String> productPagesByEngine = new HashMap<Engine, String>() {{
-        put(Engine.MYSQL, "https://aws.amazon.com/rds/mysql/");
-        put(Engine.POSTGRESQL, "https://aws.amazon.com/rds/postgresql/");
-        put(Engine.MARIA_DB, "https://aws.amazon.com/rds/mariadb/");
-        put(Engine.SQL_SERVER, "https://aws.amazon.com/rds/sqlserver/");
+    public static Map<String, String> productPagesByEngine = new HashMap<String, String>() {{
+        put(Engine.MYSQL.getName(), "https://aws.amazon.com/rds/mysql/");
+        put(Engine.POSTGRESQL.getName(), "https://aws.amazon.com/rds/postgresql/");
+        put(Engine.MARIA_DB.getName(), "https://aws.amazon.com/rds/mariadb/");
+        put(Engine.SQL_SERVER.getName(), "https://aws.amazon.com/rds/sqlserver/");
     }};
 }
