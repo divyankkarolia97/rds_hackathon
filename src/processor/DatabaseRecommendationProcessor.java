@@ -4,15 +4,19 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import config.Config;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import model.response.DialogAction;
 import model.InstanceType;
 import model.InputRequest;
+import model.response.GenericAttachments;
 import model.response.Response;
+import model.response.ResponseCard;
 import org.apache.commons.lang3.tuple.Pair;
 
-public  class DatabaseRecommendationProcessor implements RequestHandler <Map<String, Object>, Object> {
+public class DatabaseRecommendationProcessor implements RequestHandler<Map<String, Object>, Object> {
 
     ObjectMapper objectMapper = new ObjectMapper();
 
@@ -24,22 +28,37 @@ public  class DatabaseRecommendationProcessor implements RequestHandler <Map<Str
             Map<String, Object> slotValues = (Map<String, Object>) currentIntent.get("slots");
             InputRequest inputRequest = objectMapper.convertValue(slotValues, InputRequest.class);
 
-
             Map<String, Object> databaseRecommendation = getDatabaseRecommendation(inputRequest);
 
             Map<String, String> message = new HashMap<String, String>() {{
-                put("content", String.format("Here is your recommended configuration: \n Engine: %s \n Instance Type: %s \n Estimated Monthly Cost: $%.2f \n CostBreakdown: %s \n ProductUrl: %s \n  If you want us to create the database, then please "
-                        + "type “launch”. ",
-                        databaseRecommendation.get("engine"),
-                        databaseRecommendation.get("instanceType"),
-                        databaseRecommendation.get("estimatedMonthlyCost"),
-                        databaseRecommendation.get("costBreakdown"),
-                        databaseRecommendation.get("productUrl")));
+                put("content", String.format("Here is your recommended configuration.",
+                    databaseRecommendation.get("engine"),
+                    databaseRecommendation.get("instanceType"),
+                    databaseRecommendation.get("estimatedMonthlyCost"),
+                    databaseRecommendation.get("costBreakdown"),
+                    databaseRecommendation.get("productUrl")));
                 put("contentType", "CustomPayload");
 
             }};
 
-            return new Response(databaseRecommendation, new DialogAction("Close", "Fulfilled", message, null));
+            Map<String, String> button = new HashMap<String, String>() {{
+                put("text", "Launch");
+                put("value", "Launch");
+            }};
+
+            GenericAttachments genericAttachments = new GenericAttachments(
+                String.format("Engine: %s | Instance Type: %s | Estimated Monthly Cost: $%.2f", databaseRecommendation.get("engine"), databaseRecommendation.get("instanceType"), databaseRecommendation.get("estimatedMonthlyCost")),
+                (String) databaseRecommendation.get("costBreakdown"),
+                Config.IMAGE_URL,
+                (String) databaseRecommendation.get("productUrl"),
+                Collections.singletonList(button)
+            );
+
+            ResponseCard responseCard = new ResponseCard(1, "application/vnd.amazonaws.card.generic", Collections.singletonList(genericAttachments));
+
+            System.out.println(objectMapper.writeValueAsString(responseCard));
+
+            return new Response(databaseRecommendation, new DialogAction("Close", "Fulfilled", message, null, responseCard));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -49,7 +68,7 @@ public  class DatabaseRecommendationProcessor implements RequestHandler <Map<Str
 
     public Map<String, Object> getDatabaseRecommendation(InputRequest inputRequest) {
         // here comes the actual processing logic - based on the input request find the database configuration supported
-        if(inputRequest.getEngineType().equals("aurora")) {
+        if (inputRequest.getEngineType().equals("aurora")) {
             return getAuroraRecommendation(inputRequest);
         } else {
             return getRDSRecommendation(inputRequest);
@@ -66,7 +85,7 @@ public  class DatabaseRecommendationProcessor implements RequestHandler <Map<Str
 
         Pair<Double, String> costEstimation = getAuroraCostEstimation(inputRequest);
 
-        values.put("estimatedMonthlyCost",costEstimation.getKey());
+        values.put("estimatedMonthlyCost", costEstimation.getKey());
         values.put("costBreakdown", costEstimation.getValue());
 
         values.put("comment", Config.auroraComment);
@@ -82,7 +101,7 @@ public  class DatabaseRecommendationProcessor implements RequestHandler <Map<Str
 
         Pair<Double, String> costEstimation = getCostEstimation(inputRequest);
 
-        values.put("estimatedMonthlyCost",costEstimation.getKey());
+        values.put("estimatedMonthlyCost", costEstimation.getKey());
         values.put("costBreakdown", costEstimation.getValue());
 
         values.put("comment", Config.comment);
@@ -98,11 +117,11 @@ public  class DatabaseRecommendationProcessor implements RequestHandler <Map<Str
 
         Double storageCost = inputRequest.getStorageInGb() * Config.auroraStoragePerGbCostPerMonth;
         Double backupCost = inputRequest.getBackUpRetentionPeriod() * inputRequest.getStorageInGb() * Config.auroraBackupStoragePerGbCostPerMonth;
-        Double ioCost = (inputRequest.getIops()* Config.SECONDS_IN_A_MONTH * Config.auroraIOCostPerMonthPerMillion) / Config.MILLION;
+        Double ioCost = (inputRequest.getIops() * Config.SECONDS_IN_A_MONTH * Config.auroraIOCostPerMonthPerMillion) / Config.MILLION;
 
         estimatedMonthlyCost = ioCost + storageCost + backupCost;
 
-        String costBreakdown = String.format("IOCost: $%.2f, StorageCost: $%.2f, BackupCost: $%.2f", ioCost, storageCost, backupCost );
+        String costBreakdown = String.format("IOCost: $%.2f, StorageCost: $%.2f, BackupCost: $%.2f", ioCost, storageCost, backupCost);
 
         return Pair.of(estimatedMonthlyCost, costBreakdown);
     }
@@ -116,7 +135,7 @@ public  class DatabaseRecommendationProcessor implements RequestHandler <Map<Str
 
         estimatedMonthlyCost = storageCost + backupCost;
 
-        String costBreakdown = String.format("StorageCost: $%.2f, BackupCost: $%.2f", storageCost, backupCost );
+        String costBreakdown = String.format("StorageCost: $%.2f, BackupCost: $%.2f", storageCost, backupCost);
 
         return Pair.of(estimatedMonthlyCost, costBreakdown);
     }

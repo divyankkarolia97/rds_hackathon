@@ -10,6 +10,7 @@ public class Config {
     public static Integer HOURS_IN_A_MONTH = 720;
     public static Integer SECONDS_IN_A_MONTH = 2592000;
     public static Integer MILLION = 1000000;
+    public static String IMAGE_URL = "https://www.percona.com/blog/wp-content/uploads/2018/07/aws_rds-300x107.png";
 
     // Aurora
     public static Double auroraStoragePerGbCostPerMonth = 0.10;

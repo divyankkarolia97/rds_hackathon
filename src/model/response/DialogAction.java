@@ -14,4 +14,5 @@ public class DialogAction {
     String fulfillmentState;
     Map<String, String> message;
     String slotToElicit;
+    ResponseCard responseCard;
 }
